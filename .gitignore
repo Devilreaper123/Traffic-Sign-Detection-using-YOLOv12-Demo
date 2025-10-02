@@ -9,3 +9,4 @@ artifacts/
 mlruns/
 # models/*.pt
 .pytest_cache/
+.Dockerfile.gpu
