@@ -16,6 +16,7 @@ services:
       API_WORKERS: "2"
       MLFLOW_TRACKING_URI: "http://mlflow:5000"   # in compose network
       MLFLOW_EXPERIMENT_NAME: "yolov12m-traffic-sign"
+      MODEL_PATH: /app/models/best.pt
     command: ["uvicorn","src.service:app","--host","0.0.0.0","--port","8000","--workers","2"]
     volumes:
       - ./artifacts:/app/artifacts
@@ -41,6 +42,7 @@ services:
       API_WORKERS: "2"
       MLFLOW_TRACKING_URI: "http://mlflow:5000"   # in compose network
       MLFLOW_EXPERIMENT_NAME: "yolov12m-traffic-sign"
+      MODEL_PATH: /app/models/best.pt
     command: ["uvicorn","src.service:app","--host","0.0.0.0","--port","8001","--workers","2"]
     volumes:
       - ./artifacts:/app/artifacts

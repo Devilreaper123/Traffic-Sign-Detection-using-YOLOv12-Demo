@@ -7,5 +7,5 @@ venv/
 .env
 artifacts/
 mlruns/
-models/*.pt
+# models/*.pt
 .pytest_cache/
