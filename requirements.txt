@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pydantic
+numpy
+opencv-python
+pillow
+ultralytics
+python-multipart
+pytest
+httpx
+streamlit
+requests
+pandas
+mlflow
+prometheus-fastapi-instrumentator

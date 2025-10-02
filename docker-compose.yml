@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  # =======================
+  # Default CPU API (profile: default)
+  # =======================
+  yolo-api:
+    # image: ronitshahu/traffic-sign-yolo:latest   # or build: { context: ., dockerfile: Dockerfile }
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo-api
+    ports: ["8000:8000"]
+    environment:
+      PRED_LOG: /app/artifacts/predict_log.csv
+      API_WORKERS: "2"
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"   # in compose network
+      MLFLOW_EXPERIMENT_NAME: "yolov12m-traffic-sign"
+    command: ["uvicorn","src.service:app","--host","0.0.0.0","--port","8000","--workers","2"]
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./models:/app/models:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).status==200 else 1)\""]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  # =======================
+  # GPU API (profile: gpu)
+  # =======================
+  yolo-api-gpu:
+    profiles: ["gpu"]
+    # image: ronitshahu/traffic-sign-yolo-gpu:latest
+    container_name: yolo-api-gpu
+    ports: ["8001:8000"]          # GPU API on :8001 (keeps CPU API free on :8000)
+    environment:
+      PRED_LOG: /app/artifacts/predict_log.csv
+      API_WORKERS: "2"
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"   # in compose network
+      MLFLOW_EXPERIMENT_NAME: "yolov12m-traffic-sign"
+    command: ["uvicorn","src.service:app","--host","0.0.0.0","--port","8001","--workers","2"]
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./models:/app/models:ro
+    restart: unless-stopped
+    gpus: all                     # requires NVIDIA Container Toolkit
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=2).status==200 else 1)\""]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  # =======================
+  # Streamlit UI (profile: ui)
+  # Calls the API service via its container name.
+  # =======================
+  yolo-ui:
+    # profiles: ["ui"]
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.ui
+    image: yolo-ui:latest
+    container_name: yolo-ui
+    ports: ["8501:8501"]
+    environment:
+      # For CPU API + UI:
+      API_URL: http://yolo-api:8000
+      # If you want UI to point at the GPU API instead, override at runtime:
+      # API_URL: http://yolo-api-gpu:8000
+    depends_on:
+      - yolo-api
+    restart: unless-stopped
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow
+    ports: ["5000:5000"]
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+                  --backend-store-uri sqlite:////mlflow/mlruns/mlflow.db
+                  --default-artifact-root /mlflow/mlruns

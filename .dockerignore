@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+*.egg-info/
+
+# Envs & IDE
+.venv/
+.env
+.vscode/
+.idea/
+
+# Artifacts & data
+runs/
+artifacts/
+data/
+*.log
+
+# Git
+.git
+.gitignore
