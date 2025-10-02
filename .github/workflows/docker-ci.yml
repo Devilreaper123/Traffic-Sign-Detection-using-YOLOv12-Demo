@@ -1,8 +1,6 @@
-- name: Free up disk space
-  run: |
-    sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
-    docker system prune -af
+
 name: ci-docker
+
 on:
   push:
     branches: [ main ]
@@ -26,7 +24,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+      - name: Free up disk space
+        run: |
+         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+         docker system prune -af
       - name: Install deps & run tests
         run: |
           python -m pip install --upgrade pip
@@ -53,17 +54,17 @@ jobs:
             ronitshahu/traffic-sign-yolo:latest
             ronitshahu/traffic-sign-yolo:${{ github.sha }}
 
-      # (Optional) Build & push API (GPU) if Dockerfile.gpu exists
-      - name: Build & push API (GPU)
-        if: ${{ hashFiles('Dockerfile.gpu') != '' }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.gpu
-          push: true
-          tags: |
-            ronitshahu/traffic-sign-yolo-gpu:latest
-            ronitshahu/traffic-sign-yolo-gpu:${{ github.sha }}
+      # # (Optional) Build & push API (GPU) if Dockerfile.gpu exists
+      # - name: Build & push API (GPU)
+      #   if: ${{ hashFiles('Dockerfile.gpu') != '' }}
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     file: Dockerfile.gpu
+      #     push: true
+      #     tags: |
+      #       ronitshahu/traffic-sign-yolo-gpu:latest
+      #       ronitshahu/traffic-sign-yolo-gpu:${{ github.sha }}
 
       # Build & push UI
       - name: Build & push UI
