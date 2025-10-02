@@ -1,5 +1,8 @@
+- name: Free up disk space
+  run: |
+    sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+    docker system prune -af
 name: ci-docker
-
 on:
   push:
     branches: [ main ]
