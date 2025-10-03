@@ -46,7 +46,7 @@ Includes **FastAPI inference service**, **Streamlit UI**, **MLflow experiment tr
 
 ---
 
-## ⚡ Benchmarks (YOLOv12m, imgsz=640, 2 workers, Dockerized)
+## ⚡ Benchmarks (YOLOv12m, imgsz=320, 2 workers, Dockerized)
 
 - **Single image:** ~121 ms end-to-end (server ~104 ms)  
 - **Sequential (30 imgs):** 6.4 img/s, p50=99 ms, p95=124 ms  
@@ -59,7 +59,7 @@ Includes **FastAPI inference service**, **Streamlit UI**, **MLflow experiment tr
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/<yourname>/Traffic-Sign-Detection-using-YOLOv12-Demo.git
+git clone https://github.com/Devilreaper123/Traffic-Sign-Detection-using-YOLOv12-Demo.git
 cd Traffic-Sign-Detection-using-YOLOv12-Demo
 ```
 
