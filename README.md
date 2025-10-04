@@ -1,7 +1,18 @@
 # 🚦 Traffic Sign Detection using YOLOv12m
 
-End-to-end **Dockerized YOLOv12m pipeline** for real-time traffic sign detection.  
-Includes **FastAPI inference service**, **Streamlit UI**, **MLflow experiment tracking**, and **Prometheus metrics**, orchestrated with **Docker Compose** (CPU/GPU ready).
+End-to-end **Dockerized YOLOv12m pipeline** for real-time traffic sign detection, benchmarking, and experiment tracking.  
+Includes **FastAPI inference API**, **Streamlit benchmarking UI**, **MLflow tracking**, and **Caddy reverse proxy**, orchestrated via **Docker Compose** (CPU/GPU ready).  
+Deployed on **AWS EC2 (c7i.xlarge)** with **EventBridge auto-scheduling** for 9 AM–9 PM uptime and cost efficiency.
+
+---
+
+## 🌐 Live Demo
+
+| Service | URL | Description |
+|----------|-----|-------------|
+| 🧠 API | [https://api.signscopes.com/docs](https://api.signscopes.com/docs) | FastAPI inference endpoints |
+| 🎛️ UI | [https://demo.signscopes.com](https://demo.signscopes.com) | Streamlit benchmark & visualization dashboard |
+| 📊 MLflow | [https://mlflow.signscopes.com](https://mlflow.signscopes.com) | Experiment tracking and latency analytics |
 
 ---
 
@@ -9,26 +20,26 @@ Includes **FastAPI inference service**, **Streamlit UI**, **MLflow experiment tr
 
 ```
                  ┌────────────────────────────┐
-                 │         Streamlit UI       │
-                 │   (Latency/Throughput UX)  │
+                 │        Streamlit UI        │
+                 │ (demo.signscopes.com)      │
                  └─────────────▲──────────────┘
-                               │ API calls
+                               │ REST calls
                                │
                  ┌─────────────┴──────────────┐
-                 │         FastAPI API        │
-                 │   /predict & /predict_batch│
+                 │        FastAPI API         │
+                 │ (api.signscopes.com)       │
                  └─────────────▲──────────────┘
-                               │ logs metrics
+                               │ metrics + logs
                                │
                  ┌─────────────┴──────────────┐
                  │           MLflow           │
-                 │ (Experiments, Metrics)     │
+                 │ (mlflow.signscopes.com)    │
                  └─────────────▲──────────────┘
-                               │ exposes /metrics
+                               │ reverse proxy
                                │
                  ┌─────────────┴──────────────┐
-                 │       Prometheus (opt.)    │
-                 │   Scrapes API metrics      │
+                 │        Caddy Proxy         │
+                 │ SSL + routing              │
                  └────────────────────────────┘
 ```
 
@@ -36,188 +47,125 @@ Includes **FastAPI inference service**, **Streamlit UI**, **MLflow experiment tr
 
 ## ✅ Features
 
-- 🚀 **FastAPI Inference API** (`/predict`, `/predict_batch`)  
-- 📊 **Streamlit UI** for benchmarking & visualization  
-- 🧪 **MLflow** experiment tracking (latency, throughput, class counts)  
-- 🐳 **Docker Compose** orchestration (CPU/GPU profiles)  
-- 📉 **Prometheus Metrics** at `/metrics`  
-- 🔐 Environment-variable configs for flexible deployments  
-- 📂 Logs & predictions saved under `/app/artifacts`  
+- 🚀 **FastAPI** serving YOLOv12m via `/predict` and `/predict_batch`
+- 🎨 **Streamlit** UI for benchmarking latency & throughput
+- 📊 **MLflow** integrated for tracking inference performance
+- 🐳 **Docker Compose** orchestration (API + UI + MLflow + Caddy)
+- ⚙️ **Caddy Reverse Proxy** for HTTPS & multi-service routing
+- 🧠 **AWS EC2 (c7i.xlarge)** with **EventBridge auto start/stop**
+- 🔍 **Prometheus-compatible metrics** exposed at `/metrics`
+- 🔐 Environment-based configuration for flexible deployment
 
 ---
 
-## ⚡ Benchmarks (YOLOv12m, imgsz=320, 2 workers, Dockerized)
+## ⚡ Benchmarks (YOLOv12m @ imgsz=320)
 
-- **Single image:** ~121 ms end-to-end (server ~104 ms)  
-- **Sequential (30 imgs):** 6.4 img/s, p50=99 ms, p95=124 ms  
-- **Parallel (30 imgs, 2 workers):** 14.8 img/s, p50=106 ms, p95=133 ms  
-- **Batch (30 imgs):** 14.2 img/s, p50=70 ms, p95=81 ms  
+| Mode | Batch Size | Total Time | Throughput | Server p50 | p95 | End-to-End |
+|------|-------------|-------------|-------------|-------------|-------------|-------------|
+| 🖼️ Single | 1 | – | – | **523 ms** | **523 ms** | **580 ms** |
+| 🔁 Sequential | 30 | **5.30 s** | **5.66 img/s** | **130 ms** | **145 ms** | – |
+| 📦 Batch | 30 | **3.88 s** | **7.74 img/s** | **130 ms** | **141 ms** | – |
+| ✅ Success Rate | – | – | – | **100 %** | **0 Errors** | – |
+
+> Deployed via Dockerized FastAPI + Streamlit stack on AWS EC2 (c7i.xlarge) with 4 Uvicorn workers.  
+> Auto-start/stop handled by **EventBridge Scheduler** to minimize cost and idle runtime.
 
 ---
 
-## 🛠️ Setup
+## 🛠️ Setup (Local or EC2)
 
-### 1. Clone the repo
+### 1️⃣ Clone the repo
 ```bash
 git clone https://github.com/Devilreaper123/Traffic-Sign-Detection-using-YOLOv12-Demo.git
 cd Traffic-Sign-Detection-using-YOLOv12-Demo
 ```
 
-### 2. Build & run with Docker Compose
+### 2️⃣ Build and run
 ```bash
 docker compose up -d --build
 ```
 
-### 3. Access services
+### 3️⃣ Access services locally
 - API → [http://localhost:8000/docs](http://localhost:8000/docs)  
 - UI → [http://localhost:8501](http://localhost:8501)  
-- MLflow → [http://localhost:5000](http://localhost:5000)  
-- Prometheus (if enabled) → [http://localhost:9090](http://localhost:9090)  
-
-### 4. Test API
-```bash
-# Health check
-curl http://localhost:8000/healthz
-
-# Warmup
-curl -X POST http://localhost:8000/warmup
-
-# Single image predict
-curl -X POST "http://localhost:8000/predict?conf=0.25"   -H "Content-Type: multipart/form-data"   -F "file=@samples/sign.jpg"
-```
+- MLflow → [http://localhost:5000](http://localhost:5000)
 
 ---
 
-## 🐳 Docker Cheat Sheet
+## 🧰 Docker Quick Commands
 
 ```bash
-# List containers
-docker ps -a
-
-# Logs
-docker logs yolo-api
-
-# Exec into container
+docker ps -a               # list containers
+docker logs yolo-api       # view logs
 docker exec -it yolo-api sh
-
-# Stop & remove
-docker stop yolo-api && docker rm yolo-api
-
-# Clean everything
-docker system prune -af
-docker rmi $(docker images -aq)
-
-# Manual build + push
-docker build -t <dockerhub-user>/traffic-sign-yolo:latest -f Dockerfile .
-docker push <dockerhub-user>/traffic-sign-yolo:latest
+docker compose down        # stop services
+docker system prune -af    # clean up
 ```
 
 ---
 
-## 📂 Repository Layout
+## 🧾 Environment Variables
 
-```
-.
-├── src/
-│   ├── service.py       # FastAPI app with endpoints
-│   ├── infer.py         # Model loading + inference
-│   ├── schemas.py       # Pydantic models
-│   ├── mltrack.py       # Async MLflow logging
-├── ui/
-│   ├── app_ui.py        # Streamlit benchmarking UI
-│   └── Dockerfile.ui
-├── models/              # Stores best.pt (mounted/baked)
-├── artifacts/           # Logs, CSVs
-├── docker-compose.yml
-├── Dockerfile           # API (CPU/GPU support)
-└── README.md
-```
+| Key | Example | Purpose |
+|-----|----------|----------|
+| `MODEL_PATH` | `/app/models/best.pt` | YOLO weights path |
+| `MLFLOW_TRACKING_URI` | `http://mlflow:5000` | MLflow backend |
+| `MLFLOW_EXPERIMENT_NAME` | `yolov12m-traffic-sign` | Experiment name |
+| `API_URL` | `https://api.signscopes.com` | Base URL for Streamlit |
+| `UVICORN_WORKERS` | `4` | API concurrency tuning |
 
 ---
 
-## 📊 MLflow Integration
+## 🚀 CI/CD with GitHub Actions
 
-- Tracks automatically:
-  - `latency_ms`, `batch_latency_ms`, `avg_latency_ms`  
-  - `n_boxes`, per-class counts  
-- Configured via environment:
-  ```yaml
-  environment:
-    MLFLOW_TRACKING_URI: "http://mlflow:5000"
-    MLFLOW_EXPERIMENT_NAME: "yolov12m-traffic-sign"
-  ```
-- UI available at → [http://localhost:5000](http://localhost:5000)
+Automated Docker build + push to DockerHub on every `main` push.
 
----
-
-## 🚀 CI/CD (GitHub Actions)
-
-GitHub Actions builds & pushes images to DockerHub:
-
-`.github/workflows/docker-ci.yml`
 ```yaml
-name: CI/CD Docker
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: docker/setup-buildx-action@v2
-      - uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: <dockerhub-user>/traffic-sign-yolo:latest
+- uses: docker/build-push-action@v6
+  with:
+    context: .
+    file: Dockerfile
+    push: true
+    tags: |
+      ronitshahu/traffic-sign-yolo:latest
+      ronitshahu/traffic-sign-ui:latest
 ```
 
 ---
 
-## 🌐 Deployment
+## ☁️ AWS Deployment Overview
 
-### Local
-Runs via `docker compose up` (CPU/GPU profiles supported).
-
-### AWS EC2
-- Pull image from DockerHub or your ECR registry.  
-- Run with `docker compose` or plain `docker run`.  
-- Open inbound ports: **8000 (API)**, **8501 (UI)**, **5000 (MLflow)**.  
-
-### AWS ECS (Fargate)
-- Task definition with 3 services: API, UI, MLflow.  
-- Attach security group with ports `8000, 8501, 5000`.  
-- Optionally use EFS for shared model storage.  
+- **Instance**: EC2 `c7i.xlarge` (4 vCPUs, 8 GB RAM)  
+- **Reverse Proxy**: Caddy (SSL via HTTPS for all services)  
+- **Auto Scheduler**: AWS **EventBridge**
+  - Start → 9 AM (EST)
+  - Stop → 9 PM (EST)
+- **Data Retention**: MLflow logs persisted on volume `/mlruns`
+- **Domains**:  
+  - `api.signscopes.com` → FastAPI  
+  - `demo.signscopes.com` → Streamlit  
+  - `mlflow.signscopes.com` → MLflow  
 
 ---
 
-## 📦 Model Weights
+## 📈 MLflow Tracking
 
-- Default: `models/best.pt` (YOLOv12m, 38 MB).  
-- Options:
-  - **Baked into image** (simple for deployment).  
-  - **Mounted at runtime** via `docker-compose.yml`.  
-  - **Downloaded at startup** from S3 (scales better).  
+Automatically logs:
+- Inference latency (`latency_ms`, `batch_latency_ms`)
+- Throughput, box counts, and class-wise metrics
+- Run metadata (commit SHA, model version)
 
-Set with env var:
-```bash
-MODEL_PATH=/app/models/best.pt
-```
+MLflow UI: [https://mlflow.signscopes.com](https://mlflow.signscopes.com)
 
 ---
 
 ## 🧑‍💻 Contributors
 
-- **Ronit Shahu** — End-to-end architecture, Dockerization, FastAPI service, Streamlit UI, MLflow integration.  
-- Special thanks to open-source YOLOv12 community and MLflow maintainers.  
+- **Ronit Shahu** — Architecture, FastAPI, Streamlit UI, Dockerization, MLflow, CI/CD, AWS deployment.  
+- Thanks to the **Ultralytics YOLOv12** and **MLflow** open-source community.
 
 ---
 
 ## 📜 License
-MIT License. See [LICENSE](LICENSE) for details.
+
+MIT License — see [LICENSE](LICENSE).
