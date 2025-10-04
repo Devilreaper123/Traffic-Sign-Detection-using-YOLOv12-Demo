@@ -34,7 +34,11 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).status==200 else 1)"
 
-ENV MODEL_PATH=/app/models/best.pt
+ENV MODEL_PATH=/app/models/best.pt \
+    UVICORN_HOST=0.0.0.0 \
+    UVICORN_PORT=8000 \
+    UVICORN_WORKERS=4
 # Default: start uvicorn
-CMD ["uvicorn", "src.service:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+ENTRYPOINT ["uvicorn"]
+CMD ["src.service:app","--host","${UVICORN_HOST}","--port","${UVICORN_PORT}","--workers","${UVICORN_WORKERS}","--timeout-keep-alive","30"]
 

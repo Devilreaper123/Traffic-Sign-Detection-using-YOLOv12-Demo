@@ -45,7 +45,7 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 # ───────────── Endpoints ─────────────
 @app.get("/info")
 def info():
-    workers = int(os.getenv("API_WORKERS", os.getenv("WORKERS", "1")))
+    workers = int(os.getenv("UVICORN_WORKERS", "1"))
     return {"name": "yolo-traffic-sign-api", "version": "1.0.0", "workers": workers}
 
 

@@ -115,7 +115,7 @@ def run_benchmark_parallel(imgs, conf=0.25, max_workers=4):
 # ───────────── UI ─────────────
 st.set_page_config(page_title="YOLOv12m API Benchmark", layout="wide")
 st.title("YOLOv12m Traffic Sign Detection — API Demo + Benchmarks")
-st.caption("Tracking: MLflow at http://localhost:5000 (in Docker: http://mlflow:5000)")
+st.caption("Tracking: MLflow at https://mlflow.signscopes.com/")
 if "api_workers" not in st.session_state:
     st.session_state.api_workers = get_api_workers()
 with st.sidebar:
