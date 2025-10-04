@@ -13,3 +13,4 @@ requests
 pandas
 mlflow
 prometheus-fastapi-instrumentator
+boto3

@@ -1,11 +1,12 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from typing import Optional, List
 from contextlib import asynccontextmanager
+import os, time, threading
 import traceback, time, os, csv
-
+from .cw_metrics import lat_rolling, put_metrics
 from prometheus_fastapi_instrumentator import Instrumentator
 from .schemas import Prediction, Health, Warmup
 from .infer import predict_file, get_model
@@ -48,6 +49,40 @@ def info():
     workers = int(os.getenv("UVICORN_WORKERS", "1"))
     return {"name": "yolo-traffic-sign-api", "version": "1.0.0", "workers": workers}
 
+_request_counts = 0
+_lock = threading.Lock()
+
+@app.middleware("http")
+async def latency_middleware(request: Request, call_next):
+    global _request_counts
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    ms = (time.perf_counter() - t0) * 1000.0
+    lat_rolling.add(ms)
+    with _lock:
+        _request_counts += 1
+    return response
+
+def _publisher_loop():
+    global _request_counts
+    last_time = time.time()
+    last_count = 0
+    while True:
+        time.sleep(60)  # every 60s
+        snap = lat_rolling.snapshot()
+        if snap:
+            now = time.time()
+            with _lock:
+                count = _request_counts
+            tput = (count - last_count) / max(1e-9, (now - last_time))
+            put_metrics(p50_ms=snap["p50"], p95_ms=snap["p95"], tput_rps=tput)
+            last_count, last_time = count, now
+
+# start publisher thread on app startup (one per process)
+@app.on_event("startup")
+async def _start_publisher():
+    t = threading.Thread(target=_publisher_loop, daemon=True)
+    t.start()
 
 @app.get("/healthz", response_model=Health, tags=["health"])
 def health() -> Health:
