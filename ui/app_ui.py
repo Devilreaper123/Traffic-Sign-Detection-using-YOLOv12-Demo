@@ -116,6 +116,32 @@ def run_benchmark_parallel(imgs, conf=0.25, max_workers=4):
 st.set_page_config(page_title="YOLOv12m API Benchmark", layout="wide")
 st.title("YOLOv12m Traffic Sign Detection — API Demo + Benchmarks")
 st.caption("Tracking: MLflow at https://mlflow.signscopes.com/")
+st.subheader("📸 Detectable Classes")
+
+class_info = {
+    "Speed Limit 50": "0.png",
+    "Speed Limit 100": "1.png",
+    "No Overtaking": "2.png",
+    "Yield": "3.png",
+    "Stop": "4.png",
+    "No Entry": "5.png",
+    "Danger": "6.png",
+    "Road Work": "7.png",
+    "Pedestrian Crossing": "8.png",
+    "Children Crossing": "9.png"
+}
+
+cols = st.columns(5)
+for idx, (label, img_path) in enumerate(class_info.items()):
+    col = cols[idx % 5]
+    with col:
+        img_full_path = os.path.join("ui", img_path)
+        if os.path.exists(img_full_path):
+            image = Image.open(img_full_path)
+            st.image(image, caption=label, width=80)
+        else:
+            st.text(label)
+
 if "api_workers" not in st.session_state:
     st.session_state.api_workers = get_api_workers()
 with st.sidebar:
