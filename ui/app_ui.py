@@ -135,7 +135,8 @@ cols = st.columns(5)
 for idx, (label, img_path) in enumerate(class_info.items()):
     col = cols[idx % 5]
     with col:
-        img_full_path = os.path.join("ui", img_path)
+        base_path = os.path.dirname(__file__)
+        img_full_path = os.path.join(base_path, img_path)
         if os.path.exists(img_full_path):
             image = Image.open(img_full_path)
             st.image(image, caption=label, width=80)
